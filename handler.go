@@ -2,6 +2,7 @@ package socketio
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 	"sync"
 )
@@ -153,10 +154,12 @@ func (h *socketHandler) onPacket(decoder *decoder, packet *packet) ([]interface{
 			message = decoder.Message()
 		}
 	}
+	log.Printf("message = %s\n", message)
 	h.evMu.Lock()
 	c, ok := h.events[message]
 	h.evMu.Unlock()
 	if !ok {
+		log.Println("!ok")
 		// If the message is not recognized by the server, the decoder.currentCloser
 		// needs to be closed otherwise the server will be stuck until the e
 		if decoder != nil {
@@ -166,6 +169,7 @@ func (h *socketHandler) onPacket(decoder *decoder, packet *packet) ([]interface{
 	}
 	args := c.GetArgs()
 	olen := len(args)
+	log.Printf("args = %v\n", args)
 	if olen > 0 && decoder != nil {
 		packet.Data = &args
 		if err := decoder.DecodeData(packet); err != nil {
@@ -175,6 +179,7 @@ func (h *socketHandler) onPacket(decoder *decoder, packet *packet) ([]interface{
 	for i := len(args); i < olen; i++ {
 		args = append(args, nil)
 	}
+	log.Printf("message = %s, args = %v\n", message, args)
 
 	retV := c.Call(h.socket, args)
 	if len(retV) == 0 {
